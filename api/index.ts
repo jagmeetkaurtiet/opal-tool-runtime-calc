@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
+import { fetchUnsplashImages } from "./tools/get-images";
 
 dotenv.config();
 
@@ -54,6 +55,24 @@ app.get("/discovery", (req, res) => {
           },
         ],
       },
+      {
+        name: "get_images",
+        description: "Fetches images from Unsplash based on search query.",
+        parameters: [
+          {
+            name: "query",
+            type: "string",
+            description: "Search term for images (e.g., 'nature', 'beach sunset')",
+            required: true,
+          },
+          {
+            name: "perPage",
+            type: "number",
+            description: "Number of images to return (default: 5, max: 30)",
+            required: false,
+          },
+        ],
+      },
     ],
   });
 });
@@ -91,6 +110,34 @@ app.post("/tools/calculate_experiment_runtime", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+// Get images endpoint
+app.post("/tools/get_images", async (req, res) => {
+  try {
+    const { query, perPage = 5 } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({
+        error: "Query parameter is required in request body",
+        required: ["query"]
+      });
+    }
+    
+    // Use the actual fetchUnsplashImages function - no fallback to mock data
+    const images = await fetchUnsplashImages(query, perPage);
+    
+    res.json({
+      query: query,
+      perPage: parseInt(perPage as string) || 5,
+      results: images
+    });
+    
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 /*
 // For local development
 if (process.env.NODE_ENV !== "production") {
@@ -98,8 +145,9 @@ if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Discovery endpoint: http://localhost:${PORT}/discovery`);
-    console.log(`Tool endpoint: http://localhost:${PORT}/tools/calculate_experiment_runtime`);
+    console.log(`Calculate runtime endpoint: http://localhost:${PORT}/tools/calculate_experiment_runtime`);
+    console.log(`Get images endpoint: http://localhost:${PORT}/tools/get_images`);
   });
-}
-*/
+}*/
+
 export default app;
