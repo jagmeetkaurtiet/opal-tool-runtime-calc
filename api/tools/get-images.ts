@@ -1,5 +1,4 @@
-const ACCESS_KEY ="TiNe95tEnWivpHhx4DwFR8NzYmr8yvf_7K543TOexOg" ;
-
+const ACCESS_KEY =process.env.UNSPLASH_ACCESS_KEY ;
 async function fetchUnsplashImages(query: string, perPage: number = 5) {
   if (!query) throw new Error("Query parameter is required");
   
@@ -37,3 +36,4 @@ async function fetchUnsplashImages(query: string, perPage: number = 5) {
 }
 
 export { fetchUnsplashImages };
+
