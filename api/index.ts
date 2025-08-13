@@ -6,19 +6,22 @@ import {
 import express from "express";
 import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
+import { fetchUnsplashImages } from "./fetch-unsplash";
 
 dotenv.config();
 
 const app = express();
-app.use(express.json()); // Add JSON middleware
+app.use(express.json());
 
 const toolsService = new ToolsService(app);
 const bearerToken = process.env.BEARER_TOKEN;
 
-// Add a root route to provide a status message.
+// Root route
 app.get("/", (req, res) => {
   res.send("Opal tool server is running. Visit /discovery for tool discovery.");
 });
+
+/* ------------------- Calculate Runtime Tool ------------------- */
 
 type CalculateRuntimeParams = {
   BCR: number;
@@ -46,60 +49,77 @@ tool({
   name: "calculate_experiment_runtime",
   description: "Calculates the estimated time to run an experiment.",
   parameters: [
-    {
-      name: "BCR",
-      type: ParameterType.Number,
-      description:
-        "The conversion rate of the control group (e.g., 0.1 for 10%)",
-      required: true,
-    },
-    {
-      name: "MDE",
-      type: ParameterType.Number,
-      description: "The relative lift you want to detect (e.g., 0.05 for 5%)",
-      required: true,
-    },
-    {
-      name: "sigLevel",
-      type: ParameterType.Number,
-      description: "The desired statistical significance (e.g., 95 for 95%)",
-      required: true,
-    },
-    {
-      name: "numVariations",
-      type: ParameterType.Number,
-      description: "The total number of variations, including control",
-      required: true,
-    },
-    {
-      name: "dailyVisitors",
-      type: ParameterType.Number,
-      description:
-        "The number of visitors per day participating in the experiment",
-      required: true,
-    },
+    { name: "BCR", type: ParameterType.Number, description: "Control group conversion rate (0.1 for 10%)", required: true },
+    { name: "MDE", type: ParameterType.Number, description: "Relative lift to detect (0.05 for 5%)", required: true },
+    { name: "sigLevel", type: ParameterType.Number, description: "Statistical significance (e.g., 95 for 95%)", required: true },
+    { name: "numVariations", type: ParameterType.Number, description: "Total number of variations including control", required: true },
+    { name: "dailyVisitors", type: ParameterType.Number, description: "Visitors per day in the experiment", required: true },
   ],
 })(calculateRuntime);
 
+// Local test route for runtime calculation
+app.post("/tools/calculateRuntime", async (req, res) => {
+  try {
+    const result = await calculateRuntime(req.body);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/* ------------------- Unsplash Tool ------------------- */
+
+type UnsplashParams = {
+  query: string;
+  perPage?: number;
+};
+
+async function unsplashSearch(
+  params: UnsplashParams
+): Promise<{ images: any[] }> {
+  const { query, perPage = 5 } = params;
+  const images = await fetchUnsplashImages(query, perPage);
+  return { images };
+}
+
+tool({
+  name: "fetch_unsplash_images",
+  description: "Fetches images from Unsplash based on a search query.",
+  parameters: [
+    { name: "query", type: ParameterType.String, description: "Search keyword", required: true },
+    { name: "perPage", type: ParameterType.Number, description: "Number of images to return (default: 5)", required: false },
+  ],
+})(unsplashSearch);
+
+// Local test route for Unsplash search
+app.post("/tools/unsplashSearch", async (req, res) => {
+  try {
+    const result = await unsplashSearch(req.body);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/* ------------------- Auth Middleware (optional) ------------------- */
 if (bearerToken) {
-  app.use("/tools/calculateRuntime", (req, res, next) => {
+  app.use("/tools", (req, res, next) => {
     const authHeader = req.headers.authorization;
-  /*  if (!authHeader || authHeader !== `Bearer ${bearerToken}`) {
-      return res.status(401).send("Unauthorized");
-    }*/
+    // Uncomment if you want to enforce auth
+    // if (!authHeader || authHeader !== `Bearer ${bearerToken}`) {
+    //   return res.status(401).send("Unauthorized");
+    // }
     next();
   });
 }
 
-/*
-// For local development
-if (process.env.NODE_ENV !== "production") {
+/* ------------------- Local Dev Server ------------------- */
+if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Discovery endpoint: http://localhost:${PORT}/discovery`);
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🔍 Discovery endpoint: http://localhost:${PORT}/discovery`);
   });
 }
-*/
 
 export default app;
