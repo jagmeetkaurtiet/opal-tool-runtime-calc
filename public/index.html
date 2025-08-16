@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Tracking Demo</title>
+    <!-- Use Tailwind CSS for easy and responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a cleaner look */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+
+    <!-- Google Analytics Global Site Tag (gtag.js) -->
+    <!-- REPLACE 'GA_MEASUREMENT_ID' with your actual GA4 Measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9DJ5B5459C"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Replace this with your actual GA4 Measurement ID
+      gtag('config', 'G-9DJ5B5459C');
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Hero Section -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900">Analytics Tracking Demo</h1>
+            <p class="mt-2 text-lg text-gray-600">Explore how user interactions are tracked for visualization and analysis.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+        
+        <!-- Section 1: Call to Action -->
+        <section class="bg-white rounded-xl shadow-md p-8 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Interactive Component</h2>
+            <p class="text-gray-700 mb-6">
+                This button will send a custom event to Google Analytics when clicked. This data can be used to measure the effectiveness of call-to-actions.
+            </p>
+            <!-- Add a data-ga-event attribute to easily identify this button in the JS -->
+            <button id="ctaButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out">
+                Click Me!
+            </button>
+        </section>
+
+        <!-- Section 2: Scroll Depth and Visibility -->
+        <section id="content-section" class="bg-white rounded-xl shadow-md p-8 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Content That Can Be Optimized</h2>
+            <p class="text-gray-700">
+                This is a long content section. We will use an IntersectionObserver to track when this section becomes visible to the user. This data helps us understand if users are scrolling far enough down the page to see important content.
+            </p>
+            <div class="h-96 w-full bg-gray-200 my-6 flex items-center justify-center rounded-lg">
+                <p class="text-gray-500">A large image or video would go here.</p>
+            </div>
+            <p class="text-gray-700">
+                By tracking this event, you can later analyze if this part of the page is being seen and then decide if it needs to be updated or moved higher on the page to improve visibility. A low visibility rate suggests the content is not being seen.
+            </p>
+        </section>
+
+        <!-- Section 3: Download Tracking -->
+        <section class="bg-white rounded-xl shadow-md p-8">
+            <h2 class="text-2xl font-semibold mb-4">Track a Download Link</h2>
+            <p class="text-gray-700 mb-4">
+                Clicking this link will also send a custom event to Google Analytics, allowing you to track downloads.
+            </p>
+            <a href="/some-file.pdf" id="downloadLink" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out">
+                Download PDF
+            </a>
+        </section>
+    </main>
+
+    <!-- JavaScript for event tracking -->
+    <script>
+        // *** This is the core logic for sending custom events to GA4 ***
+
+        // 1. Track a button click
+        const ctaButton = document.getElementById('ctaButton');
+        ctaButton.addEventListener('click', () => {
+            console.log('CTA Button clicked. Sending event to GA...');
+            gtag('event', 'cta_button_click', {
+                'event_category': 'Engagement',
+                'event_label': 'Hero CTA Click',
+            });
+        });
+
+        // 2. Track content visibility with IntersectionObserver
+        const contentSection = document.getElementById('content-section');
+        const observerOptions = {
+            root: null, // use the viewport as the container
+            threshold: 0.5 // trigger when 50% of the element is visible
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    console.log('Content section visible. Sending event to GA...');
+                    gtag('event', 'content_visible', {
+                        'event_category': 'Scroll',
+                        'event_label': 'Content Section Visited',
+                    });
+                    // Stop observing after the event is sent once
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Start observing the content section
+        observer.observe(contentSection);
+
+
+        // 3. Track a download link click
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.addEventListener('click', () => {
+            console.log('Download link clicked. Sending event to GA...');
+            gtag('event', 'file_download', {
+                'event_category': 'Download',
+                'event_label': 'Sample PDF Download',
+            });
+        });
+
+    </script>
+</body>
+</html>
