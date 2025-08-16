@@ -7,6 +7,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
 import { fetchUnsplashImages } from "./fetch-unsplash";
+import path from 'path';
 
 dotenv.config();
 
@@ -121,5 +122,11 @@ if (require.main === module) {
     console.log(`🔍 Discovery endpoint: http://localhost:${PORT}/discovery`);
   });
 }
+
+
+app.get('/test', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
+});
+
 
 export default app;
