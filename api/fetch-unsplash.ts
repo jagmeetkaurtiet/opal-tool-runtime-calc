@@ -2,15 +2,14 @@ require('dotenv').config();
 
 const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
-async function fetchUnsplashImages(query: string, perPage: number = 5) {
+async function fetchUnsplashImages(query: string, count: number = 5) {
   if (!query) throw new Error("Query parameter is required");
 
-  const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+  const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
     query
-  )}&per_page=${perPage}&orientation=landscape`;
+  )}&count=${count}&orientation=landscape`;
 
   try {
-    // Use global fetch if available (Node.js 18+), otherwise fallback to node-fetch
     const fetchFunction = globalThis.fetch || require('node-fetch');
     const response = await fetchFunction(url, {
       headers: {
@@ -21,24 +20,26 @@ async function fetchUnsplashImages(query: string, perPage: number = 5) {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.errors ? errorData.errors.join(", ") : "Error fetching images"
+        errorData.errors ? errorData.errors.join(", ") : "Error fetching random images"
       );
     }
 
     const data = await response.json();
 
-    // Map to safe format for Opal (avoid download links)
-    return data.results.map((img: any) => ({
+    // Normalize whether it's array or single object
+    const results = Array.isArray(data) ? data : [data];
+
+    return results.map((img: any) => ({
       id: img.id,
-      thumbUrl: img.urls.thumb,          // ✅ use this for thumbnails
-      previewUrl: img.urls.small,        // ✅ better for Opal previews
-      fullUrl: img.urls.regular,         // ✅ fallback / main image
+      thumbUrl: img.urls.thumb,
+      previewUrl: img.urls.small,
+      fullUrl: img.urls.regular,
       photographer: img.user.name,
       photographerProfile: img.user.links.html,
       description: img.alt_description || "Unsplash Image",
     }));
   } catch (error) {
-    console.error("Error fetching from Unsplash:", error);
+    console.error("Error fetching random Unsplash images:", error);
     throw error;
   }
 }
